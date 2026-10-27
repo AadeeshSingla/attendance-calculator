@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --square: #151b23;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #39d353;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 64px 20px 72px;
+    background: var(--bg) radial-gradient(60% 320px at 50% 0, rgba(57, 211, 83, .07), transparent);
+    background-repeat: no-repeat;
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    /* h = classes this week, a = attended. Do not rename. */
+    counter-reset: pps-h pps-a chm-h chm-a cal-h cal-a ele-h ele-a env-h env-a;
+  }
+  h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .sub { margin: 4px 0 28px; color: var(--muted); }
+
+  /* each checkbox counts as one class for its subject and for its day;
+     ticked also counts as attended */
+  .pps { counter-increment: pps-h d-h; }
+  .chm { counter-increment: chm-h d-h; }
+  .cal { counter-increment: cal-h d-h; }
+  .ele { counter-increment: ele-h d-h; }
+  .env { counter-increment: env-h d-h; }
+  .pps:checked { counter-increment: pps-h pps-a d-h d-a; }
+  .chm:checked { counter-increment: chm-h chm-a d-h d-a; }
+  .cal:checked { counter-increment: cal-h cal-a d-h d-a; }
+  .ele:checked { counter-increment: ele-h ele-a d-h d-a; }
+  .env:checked { counter-increment: env-h env-a d-h d-a; }
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 28px;
+    background: rgba(13, 17, 23, .6);
+  }
+  .card + .card { margin-top: 20px; }
+
+  /* ---------- days ---------- */
+  .day {
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid #21262d;
+    counter-reset: d-h d-a;
+  }
+  .day b { font-weight: 500; transition: color .2s; }
+  .boxes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dc { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .dc::after { content: counter(d-a) " / " counter(d-h); }
+
+  /* a day with every box ticked turns its name green */
+  .day:not(:has(input:not(:checked))) b { color: var(--green); }
+
+  /* the small rounded squares, like the contribution graph */
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    background: var(--square);
+    border: 1px solid rgba(240, 246, 252, .05);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, box-shadow .15s, transform .1s;
+  }
+  input[type="checkbox"]:hover { border-color: rgba(240, 246, 252, .35); }
+  input[type="checkbox"]:active { transform: scale(.88); }
+  input[type="checkbox"]:checked {
+    background: var(--green);
+    border-color: rgba(240, 246, 252, .15);
+    box-shadow: 0 0 10px rgba(57, 211, 83, .35);
+  }
+  input[type="checkbox"]:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .note { margin: 0; padding: 16px 0 6px; color: var(--muted); font-size: 13px; }
+
+  /* ---------- subjects ---------- */
+  .subjects div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #21262d;
+  }
+  .subjects div:last-child { border-bottom: 0; }
+  .subjects div::before {
+    content: "";
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--square);
+    border: 1px solid rgba(240, 246, 252, .1);
+    transition: background .2s, border-color .2s;
+  }
+  .subjects span { margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .subjects span::after { content: " attended"; color: var(--muted); }
+
+  .s-pps span::before { content: counter(pps-a) " / " counter(pps-h); }
+  .s-chm span::before { content: counter(chm-a) " / " counter(chm-h); }
+  .s-cal span::before { content: counter(cal-a) " / " counter(cal-h); }
+  .s-ele span::before { content: counter(ele-a) " / " counter(ele-h); }
+  .s-env span::before { content: counter(env-a) " / " counter(env-h); }
+
+  /* a subject with every class ticked fills its square green */
+  main:not(:has(.pps:not(:checked))) .s-pps::before,
+  main:not(:has(.chm:not(:checked))) .s-chm::before,
+  main:not(:has(.cal:not(:checked))) .s-cal::before,
+  main:not(:has(.ele:not(:checked))) .s-ele::before,
+  main:not(:has(.env:not(:checked))) .s-env::before { background: var(--green); border-color: var(--green); }
+
+  @media (max-width: 520px) {
+    body { padding-top: 40px; }
+    .card { padding: 8px 18px; }
+    .day { grid-template-columns: 1fr auto; gap: 10px 12px; }
+    .day b { grid-row: 1; grid-column: 1; }
+    .dc { grid-row: 1; grid-column: 2; }
+    .boxes { grid-row: 2; grid-column: 1 / -1; }
+    .subjects div { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Attendance</h1>
+  <p class="sub">This week</p>
+
+  <!-- One checkbox per class, in timetable order. The class on each
+       checkbox is its subject: pps, chm, cal, ele, env.
+       To add or remove a class, copy or delete a checkbox line.
+       Keep the empty <span class="dc"> after the boxes of each day.
+       Hover a checkbox to see which class it is. -->
+
+  <section class="card">
+    <div class="day"><b>Monday</b><div class="boxes">
+      <input type="checkbox" class="cal" title="Calculus · Tut · 9:40 AM">
+      <input type="checkbox" class="ele" title="Electrical · Tut · 10:30 AM">
+      <input type="checkbox" class="env" title="Energy &amp; Env · Lec · 11:20 AM">
+      <input type="checkbox" class="ele" title="Electrical · Lec · 12:10 PM">
+    </div><span class="dc"></span></div>
+
+    <div class="day"><b>Tuesday</b><div class="boxes">
+      <input type="checkbox" class="pps" title="Programming · Lec · 8:00 AM">
+      <input type="checkbox" class="chm" title="Chemistry · Lec · 8:50 AM">
+      <input type="checkbox" class="pps" title="Programming · Lab · 9:40 AM">
+      <input type="checkbox" class="pps" title="Programming · Lab · 10:30 AM">
+      <input type="checkbox" class="cal" title="Calculus · Lec · 1:50 PM">
+      <input type="checkbox" class="ele" title="Electrical · Lec · 2:40 PM">
+      <input type="checkbox" class="chm" title="Chemistry · Lab · 3:30 PM">
+      <input type="checkbox" class="chm" title="Chemistry · Lab · 4:20 PM">
+    </div><span class="dc"></span></div>
+
+    <div class="day"><b>Wednesday</b><div class="boxes">
+      <input type="checkbox" class="ele" title="Electrical · Lab · 9:40 AM">
+      <input type="checkbox" class="ele" title="Electrical · Lab · 10:30 AM">
+      <input type="checkbox" class="pps" title="Programming · Lec · 11:20 AM">
+      <input type="checkbox" class="env" title="Energy &amp; Env · Lec · 12:10 PM">
+    </div><span class="dc"></span></div>
+
+    <div class="day"><b>Thursday</b><div class="boxes">
+      <input type="checkbox" class="chm" title="Chemistry · Lec · 8:00 AM">
+      <input type="checkbox" class="pps" title="Programming · Lec · 8:50 AM">
+      <input type="checkbox" class="ele" title="Electrical · Lec · 9:40 AM">
+      <input type="checkbox" class="cal" title="Calculus · Lec · 10:30 AM">
+    </div><span class="dc"></span></div>
+
+    <div class="day"><b>Friday</b><div class="boxes">
+      <input type="checkbox" class="cal" title="Calculus · Lec · 1:50 PM">
+      <input type="checkbox" class="chm" title="Chemistry · Lec · 2:40 PM">
+    </div><span class="dc"></span></div>
+
+    <p class="note">Tick each class you attended.</p>
+  </section>
+
+  <!-- Subject totals. Keep this after the checkboxes. -->
+  <section class="card subjects">
+    <div class="s-pps">Programming for Problem Solving <span></span></div>
+    <div class="s-chm">Chemistry <span></span></div>
+    <div class="s-cal">Calculus for Engineers <span></span></div>
+    <div class="s-ele">Electrical &amp; Electronics <span></span></div>
+    <div class="s-env">Energy and Environment <span></span></div>
+  </section>
+
+</main>
+</body>
+</html>
